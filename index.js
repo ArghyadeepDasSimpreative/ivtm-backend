@@ -5,6 +5,8 @@ import { connectDB } from "./config/db.js";
 import maturityQuestionRoutes from "./routes/maturityQuestion.routes.js";
 import maturityResultRoutes from "./routes/maturityresult.routes.js";
 import organisationUserRoutes from "./routes/organisatoinUser.routes.js";
+import nistQuestionRoutes from "./routes/nistQuestion.routes.js";
+import nistEvaluationRoutes from "./routes/nistEvaluation.routes.js";
 
 dotenv.config();
 connectDB();
@@ -19,6 +21,8 @@ app.use(express.json());
 app.use("/maturity-questions", maturityQuestionRoutes);
 app.use("/maturity-results", maturityResultRoutes);
 app.use("/organisation-user", organisationUserRoutes);
+app.use("/nist-questions", nistQuestionRoutes);
+app.use("/nist-evaluation", nistEvaluationRoutes);
 
 
 const PORT = process.env.PORT || 5000;

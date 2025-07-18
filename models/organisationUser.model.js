@@ -30,7 +30,18 @@ const organizationUserSchema = new mongoose.Schema({
   defaultPassword: {
     type: String,
     required: true,
+  },
+
+  // 🔐 OTP fields
+  otp: {
+    type: String,
+    default: null,
+  },
+  otpExpiresAt: {
+    type: Date,
+    default: null,
   }
+
 }, {
   timestamps: true,
 });
