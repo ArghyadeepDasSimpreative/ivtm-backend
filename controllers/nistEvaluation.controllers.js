@@ -210,21 +210,22 @@ export const getNistQuestionsWithAnswers = async (req, res) => {
     }
 
     const allQuestions = await NistQuestion.find({});
-    const answersMap = {};
 
-    for (const ans of evaluation.answersGiven) {
-      answersMap[ans.questionId] = ans;
-    }
+    const result = allQuestions.map((question) => {
+      const matchingAnswer = evaluation.answersGiven.find((ans) =>
+        ans.questionId.toString() === question._id.toString()
+      );
 
-    const result = allQuestions.map((q) => {
-      const answer = answersMap[q._id] || { selected_option: "No", marks: 1 };
+      console.log("questin is ", question.toObject().subcategoryDescription)
+
       return {
-        questionId: q._id,
-        question_text: q.questionText,
-        function: q.function,
-        subcategory: q.subcategory,
-        selected_option: answer.selected_option,
-        marks: answer.marks,
+        questionId: question._id,
+        question_text: question.questionText,
+        function: question.function,
+        subcategory: question.subcategory,
+        subcategoryDescription: question.toObject().subcategoryDescription,
+        answer: matchingAnswer ? question.toObject().answers[matchingAnswer.marks -1] : "No",
+        marks: matchingAnswer ? matchingAnswer.marks : 1,
       };
     });
 
@@ -234,6 +235,7 @@ export const getNistQuestionsWithAnswers = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 
 

@@ -65,20 +65,21 @@ export const uploadNistQuestions = async (req, res) => {
       return res.status(400).json({ message: 'Excel sheet is empty or has invalid format.' });
     }
 
-    // Hold previous non-empty values for forward fill
     let prevFunction = '';
     let prevCategory = '';
     let prevSubcategory = '';
+    let prevSubDesc = '';
 
     const formatted = rows.map(row => {
-      // Forward fill if value is empty
       const currentFunction = row['Function']?.trim() || prevFunction;
       const currentCategory = row['Category']?.trim() || prevCategory;
       const currentSubcategory = row['Subcategory']?.trim() || prevSubcategory;
+      const currentSubDesc = row['Subcategory description']?.trim() || prevSubDesc;
 
       prevFunction = currentFunction;
       prevCategory = currentCategory;
       prevSubcategory = currentSubcategory;
+      prevSubDesc = currentSubDesc;
 
       const answers = [
         row['Scoring with Answer'],
@@ -89,9 +90,10 @@ export const uploadNistQuestions = async (req, res) => {
       ].filter(ans => ans && ans.toString().trim() !== '');
 
       return {
-        function: currentFunction.split(' ')[0].trim(), // e.g., "Respond"
+        function: currentFunction.split(' ')[0].trim(),
         category: currentCategory,
         subcategory: currentSubcategory,
+        subcategoryDescription: currentSubDesc,
         questionText: row['Question']?.trim() || '',
         answers
       };
@@ -109,6 +111,7 @@ export const uploadNistQuestions = async (req, res) => {
     return res.status(500).json({ message: 'Error uploading NIST questions.' });
   }
 };
+
 
 export const getNistQuestionsByFunction = async (req, res) => {
   try {
