@@ -211,12 +211,12 @@ export const getNistQuestionsWithAnswers = async (req, res) => {
 
     const allQuestions = await NistQuestion.find({});
 
+    console.log("question one is ", allQuestions[0])
+
     const result = allQuestions.map((question) => {
       const matchingAnswer = evaluation.answersGiven.find((ans) =>
         ans.questionId.toString() === question._id.toString()
       );
-
-      console.log("questin is ", question.toObject().subcategoryDescription)
 
       return {
         questionId: question._id,
@@ -226,6 +226,7 @@ export const getNistQuestionsWithAnswers = async (req, res) => {
         subcategoryDescription: question.toObject().subcategoryDescription,
         answer: matchingAnswer ? question.toObject().answers[matchingAnswer.marks -1] : "No",
         marks: matchingAnswer ? matchingAnswer.marks : 1,
+        answers: question.toObject().answers
       };
     });
 

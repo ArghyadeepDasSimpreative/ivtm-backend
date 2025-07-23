@@ -19,6 +19,7 @@ export const authorize = (allowedRoles) => {
         return res.satus(404).json({message: "User not found"});
       }
 
+      console.log("user found is ", userFound.toObject())
       if (!allowedRoles.includes(userFound.toObject().role)) {
         return res.status(403).json({ message: 'Forbidden: Insufficient role' })
       }

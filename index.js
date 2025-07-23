@@ -7,6 +7,7 @@ import maturityResultRoutes from "./routes/maturityresult.routes.js";
 import organisationUserRoutes from "./routes/organisatoinUser.routes.js";
 import nistQuestionRoutes from "./routes/nistQuestion.routes.js";
 import nistEvaluationRoutes from "./routes/nistEvaluation.routes.js";
+import hipaaQuestionRoutes from "./routes/hipaaQuestion.routes.js";
 
 dotenv.config();
 connectDB();
@@ -23,6 +24,7 @@ app.use("/maturity-results", maturityResultRoutes);
 app.use("/organisation-user", organisationUserRoutes);
 app.use("/nist-questions", nistQuestionRoutes);
 app.use("/nist-evaluation", nistEvaluationRoutes);
+app.use("/hipaa-questions", hipaaQuestionRoutes);
 
 
 const PORT = process.env.PORT || 5000;
