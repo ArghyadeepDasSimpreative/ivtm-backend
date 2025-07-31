@@ -1,4 +1,4 @@
-import { MaturityQuestion } from "../models/MaturityQuestion.model.js";
+import { MaturityQuestion } from "../models/maturityQuestion.model.js";
 
 export const createMaturityQuestion = async (req, res) => {
   try {
