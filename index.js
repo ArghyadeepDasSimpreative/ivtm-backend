@@ -8,6 +8,8 @@ import organisationUserRoutes from "./routes/organisatoinUser.routes.js";
 import nistQuestionRoutes from "./routes/nistQuestion.routes.js";
 import nistEvaluationRoutes from "./routes/nistEvaluation.routes.js";
 import hipaaQuestionRoutes from "./routes/hipaaQuestion.routes.js";
+import hipaaEvaluationRoutes from "./routes/hipaaEvaluation.routes.js";
+import vulnerabilityReportRoutes from "./routes/vulnerabilityReport.routes.js";
 
 dotenv.config();
 connectDB();
@@ -25,6 +27,8 @@ app.use("/organisation-user", organisationUserRoutes);
 app.use("/nist-questions", nistQuestionRoutes);
 app.use("/nist-evaluation", nistEvaluationRoutes);
 app.use("/hipaa-questions", hipaaQuestionRoutes);
+app.use("/hipaa-evaluations", hipaaEvaluationRoutes);
+app.use("/vulnerability-reports", vulnerabilityReportRoutes);
 
 
 const PORT = process.env.PORT || 5000;

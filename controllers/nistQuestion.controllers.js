@@ -113,6 +113,37 @@ export const uploadNistQuestions = async (req, res) => {
 };
 
 
+export const getUniqueSubcategoriesByFunction = async (req, res) => {
+  try {
+    const fn = req.query.function;
+    const validFunctions = ['IDENTIFY', 'PROTECT', 'DETECT', 'RESPOND', 'RECOVER', 'GOVERN'];
+
+    if (!fn || !validFunctions.includes(fn.toUpperCase())) {
+      return res.status(400).json({ message: `Valid function required. Must be one of: ${validFunctions.join(', ')}` });
+    }
+
+    const questions = await NistQuestion.find({ function: fn.toUpperCase() }).select("subcategory");
+
+    // Extract base subcategories (e.g., "RS.MI" from "RS.MI-02")
+    const baseSubcategories = questions
+      .map(q => q.subcategory?.split("-")[0])
+      .filter(Boolean);
+
+    // Deduplicate
+    const unique = [...new Set(baseSubcategories)];
+
+    return res.status(200).json({
+      function: fn.toUpperCase(),
+      subcategories: unique
+    });
+
+  } catch (err) {
+    console.error("❌ Error fetching subcategories:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
 export const getNistQuestionsByFunction = async (req, res) => {
   try {
     const fn = req.query.function;

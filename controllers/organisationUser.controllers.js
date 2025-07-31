@@ -1,7 +1,7 @@
 import { OrganizationUser } from "../models/organisationUser.model.js";
 import { sendOtpMail } from "../lib/mail.js";
 import jwt from "jsonwebtoken";
-import { NistQuestion } from "../models/nistQuestions.model.js";
+import bcrypt from "bcryptjs";
 
 export const registerOrganizationUser = async (req, res) => {
   try {
@@ -44,13 +44,16 @@ export const registerOrganizationUser = async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // Valid for 10 minutes
 
+     const hashedPassword = await bcrypt.hash(password, 10);
+
     // --- Create and Save New User ---
     const newUser = new OrganizationUser({
       organisationName,
       businessEmail,
       phoneNumber,
       username,
-      defaultPassword: password,
+      defaultPassword: hashedPassword,
+      role: "user",
       otp,
       otpExpiresAt
     });
@@ -138,33 +141,55 @@ export const verifyOrganizationOtp = async (req, res) => {
   }
 };
 
-export const getUniqueSubcategoriesByFunction = async (req, res) => {
-  try {
-    const fn = req.query.function;
-    const validFunctions = ['IDENTIFY', 'PROTECT', 'DETECT', 'RESPOND', 'RECOVER', 'GOVERN'];
 
-    if (!fn || !validFunctions.includes(fn.toUpperCase())) {
-      return res.status(400).json({ message: `Valid function required. Must be one of: ${validFunctions.join(', ')}` });
+
+export const signinUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required.' });
     }
 
-    const questions = await NistQuestion.find({ function: fn.toUpperCase() }).select("subcategory");
+    const user = await OrganizationUser.findOne({ businessEmail: email });
 
-    // Extract base subcategories (e.g., "RS.MI" from "RS.MI-02")
-    const baseSubcategories = questions
-      .map(q => q.subcategory?.split("-")[0])
-      .filter(Boolean);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
 
-    // Deduplicate
-    const unique = [...new Set(baseSubcategories)];
+    console.log("User found is ", user.toObject());
+
+    const isPasswordValid = await bcrypt.compare(password, user.defaultPassword);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid password.' });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.businessEmail,
+        username: user.username
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
 
     return res.status(200).json({
-      function: fn.toUpperCase(),
-      subcategories: unique
+      message: 'Sign in successful.',
+      token,
+      user: {
+        id: user._id,
+        organisationName: user.organisationName,
+        businessEmail: user.businessEmail,
+        phoneNumber: user.phoneNumber,
+        username: user.username
+      }
     });
 
-  } catch (err) {
-    console.error("❌ Error fetching subcategories:", err);
-    return res.status(500).json({ message: "Internal server error" });
+  } catch (error) {
+    console.error('Sign in error:', error);
+    return res.status(500).json({ message: 'Internal server error.' });
   }
 };
 

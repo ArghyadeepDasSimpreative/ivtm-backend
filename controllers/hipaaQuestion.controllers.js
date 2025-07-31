@@ -66,3 +66,23 @@ export const uploadHipaaQuestions = async (req, res) => {
     res.status(500).json({ message: 'Failed to upload questions.', error: error.message });
   }
 };
+
+export const getAllHipaaQuestions = async (req, res) => {
+  try {
+    const questions = await HipaaQuestion.find().sort({ createdAt: -1 });
+    res.status(200).json({ count: questions.length, questions });
+  } catch (error) {
+    console.error('Fetch error:', error);
+    res.status(500).json({ message: 'Failed to fetch questions.', error: error.message });
+  }
+};
+
+export const getHipaaCategories = async (req, res) => {
+  try {
+    const categories = await HipaaQuestion.distinct('category');
+    return res.status(200).json({categories});
+  } catch (error) {
+    console.error('Error fetching HIPAA categories:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};

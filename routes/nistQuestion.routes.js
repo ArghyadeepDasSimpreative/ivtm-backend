@@ -1,8 +1,8 @@
 import express from "express";
-import { createNistQuestion, getNistQuestionsByFunction, getQuestionCountByFunction, uploadNistQuestions } from "../controllers/nistQuestion.controllers.js";
+import { createNistQuestion, getNistQuestionsByFunction, getQuestionCountByFunction, uploadNistQuestions,getUniqueSubcategoriesByFunction } from "../controllers/nistQuestion.controllers.js";
 import { authorize } from "../middlewares/authorize.js";
 import { uploadExcel } from "../middlewares/upload.js";
-import { getUniqueSubcategoriesByFunction } from "../controllers/organisationUser.controllers.js";
+
 
 const nistQuestionRoutes = express.Router();
 

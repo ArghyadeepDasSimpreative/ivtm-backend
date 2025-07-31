@@ -16,7 +16,7 @@ export const authorize = (allowedRoles) => {
       const userFound = await OrganizationUser.findById(decoded.id);
 
       if(!userFound) {
-        return res.satus(404).json({message: "User not found"});
+        return res.status(404).json({message: "User not found"});
       }
 
       console.log("user found is ", userFound.toObject())
@@ -27,6 +27,7 @@ export const authorize = (allowedRoles) => {
       req.user = { _id: userFound._id, role: userFound.role }
       next()
     } catch (err) {
+      console.log('Authorization error:', err)
       res.status(401).json({ message: 'Invalid or expired token' })
     }
   }
