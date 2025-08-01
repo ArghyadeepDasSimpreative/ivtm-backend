@@ -76,7 +76,7 @@ export const registerOrganizationUser = async (req, res) => {
 
   } catch (error) {
     console.error('Registration error:', error);
-    return res.status(500).json({ message: 'Internal server error.' });
+    return res.status(500).json({ message: error.message || 'Internal server error.' });
   }
 };
 
