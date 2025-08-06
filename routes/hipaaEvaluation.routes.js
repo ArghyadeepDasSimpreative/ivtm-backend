@@ -4,8 +4,8 @@ import { getEvaluationDetails, getUserHipaaEvaluations, recordHipaaEvaluation } 
 
 const hipaaEvaluationRoutes = express.Router();
 
-hipaaEvaluationRoutes.post("/", authorize(["user"]), recordHipaaEvaluation);
-hipaaEvaluationRoutes.get("/assessments", authorize(["user"]), getUserHipaaEvaluations);
-hipaaEvaluationRoutes.get("/details/:evaluationId", authorize(["user"]), getEvaluationDetails);
+hipaaEvaluationRoutes.post("/", authorize(["admin"]), recordHipaaEvaluation);
+hipaaEvaluationRoutes.get("/assessments", authorize(["admin"]), getUserHipaaEvaluations);
+hipaaEvaluationRoutes.get("/details/:evaluationId", authorize(["admin"]), getEvaluationDetails);
 
 export default hipaaEvaluationRoutes;

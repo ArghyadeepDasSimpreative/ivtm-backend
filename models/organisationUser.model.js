@@ -31,8 +31,6 @@ const organizationUserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-
-  // 🔐 OTP fields
   otp: {
     type: String,
     default: null,
@@ -40,8 +38,16 @@ const organizationUserSchema = new mongoose.Schema({
   otpExpiresAt: {
     type: Date,
     default: null,
+  },
+  role: {
+    type: String,
+    enum: ['sysadmin', 'admin', 'editor', 'viewer'],
+    default: 'admin',
+  },
+  profileImageUrl: {
+    type: String,
+    default: null,
   }
-
 }, {
   timestamps: true,
 });

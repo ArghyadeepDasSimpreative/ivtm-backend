@@ -6,7 +6,7 @@ import { authorize } from "../middlewares/authorize.js";
 const hipaaQuestionRoutes = express.Router();
 
 hipaaQuestionRoutes.post("/upload", uploadExcel, uploadHipaaQuestions);
-hipaaQuestionRoutes.get("/", authorize(["user"]), getAllHipaaQuestions );
-hipaaQuestionRoutes.get("/categories", authorize(["user"]), getHipaaCategories);
+hipaaQuestionRoutes.get("/", authorize(["admin"]), getAllHipaaQuestions );
+hipaaQuestionRoutes.get("/categories", authorize(["admin"]), getHipaaCategories);
 
 export default hipaaQuestionRoutes;

@@ -53,7 +53,7 @@ export const registerOrganizationUser = async (req, res) => {
       phoneNumber,
       username,
       defaultPassword: hashedPassword,
-      role: "user",
+      role: "admin",
       otp,
       otpExpiresAt
     });
@@ -70,7 +70,7 @@ export const registerOrganizationUser = async (req, res) => {
         businessEmail,
         phoneNumber,
         username,
-        role: "user"
+        role: "admin"
       }
     });
 
@@ -100,7 +100,7 @@ export const verifyOrganizationOtp = async (req, res) => {
     }
 
     if (user.otp !== otp) {
-      return res.status(400).json({ message: 'Invalid OTP.' });
+      return res.status(400).json({ message: 'Invalid OTP' });
     }
 
     if (user.otpExpiresAt < new Date()) {
@@ -157,7 +157,6 @@ export const signinUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    console.log("User found is ", user.toObject());
 
     const isPasswordValid = await bcrypt.compare(password, user.defaultPassword);
 
@@ -192,5 +191,110 @@ export const signinUser = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error.' });
   }
 };
+
+export const updateProfileImage = async (req, res) => {
+  try {
+    if (!req.imageUrl) {
+      return res.status(400).json({ error: 'No image uploaded or processing failed' });
+    }
+
+    const updatedUser = await OrganizationUser.findByIdAndUpdate(
+      req.user._id,
+      { profileImageUrl: req.imageUrl },
+      { new: true }
+    );
+
+    res.json({
+      message: 'Profile image updated successfully',
+      profileImageUrl: updatedUser.profileImageUrl,
+    });
+  } catch (error) {
+    console.log('Error updating profile image:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getOrganizationUserProfile = async (req, res) => {
+  try {
+    const user = await OrganizationUser.findById(req.user._id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch user details", error: error.message });
+  }
+};
+
+export const createOrganizationUser = async (req, res) => {
+  try {
+    const {
+      businessEmail,
+      phoneNumber,
+      username,
+      defaultPassword,
+      role,
+    } = req.body;
+
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const orgData = await OrganizationUser.findById(userId);
+    if (!orgData) {
+      return res.status(404).json({ message: "Organization not found" });
+    }
+
+    const existingUser = await OrganizationUser.findOne({ businessEmail });
+    if (existingUser) {
+      return res.status(409).json({ message: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+    const newUser = new OrganizationUser({
+      organisationName: orgData.organisationName,
+      businessEmail,
+      phoneNumber,
+      username,
+      defaultPassword: hashedPassword,
+      role: role || "admin",
+    });
+
+    await newUser.save();
+
+    const createdUser = await OrganizationUser.findById(newUser._id).select("-defaultPassword");
+
+    res.status(201).json({
+      message: "User created successfully",
+      user: createdUser,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Failed to create user", error: error.message });
+  }
+};
+
+export const getAllOrganizationUsers = async (req, res) => {
+  try {
+    const userData = await OrganizationUser.findById(req.user._id);
+    const organisationName = userData.organisationName;
+
+    const users = await OrganizationUser.find({ organisationName }).select("-defaultPassword");
+
+    res.status(200).json({
+      message: "Users fetched successfully",
+      users,
+    });
+
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 
 

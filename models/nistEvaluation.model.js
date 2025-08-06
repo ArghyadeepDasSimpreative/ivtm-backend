@@ -10,26 +10,12 @@ const nistEvaluationSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  answersGiven: [
-    {
-      questionId: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true
-      },
-      
-      marks: {
-        type: Number,
-        required: true,
-        min: 0,
-        max: 5
-      },
-      functionName: {
-        type: String,
-        enum: ['IDENTIFY', 'PROTECT', 'DETECT', 'RESPOND', 'RECOVER', 'GOVERN'],
-        required: true
-      }
-    }
-  ]
+  status: {
+    type: String,
+    enum: ['draft', 'submitted'],
+    default: 'draft',
+    required: true
+  }
 }, {
   timestamps: true
 });
