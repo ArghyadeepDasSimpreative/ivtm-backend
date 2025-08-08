@@ -77,9 +77,10 @@ export const updateEvaluation = async (req, res) => {
     }
 
     // Update evaluation status
-    evaluation.status = status == true ? "submitted": "draft";
+    evaluation.status = status === true ? "submitted" : "draft";
     await evaluation.save();
 
+    // Upsert answers
     const bulkOperations = answers.map((ans) => ({
       updateOne: {
         filter: {
@@ -92,42 +93,56 @@ export const updateEvaluation = async (req, res) => {
             evaluationId,
           },
         },
-        upsert: true, // if not found, insert it
+        upsert: true,
       },
     }));
 
     await NistAnswer.bulkWrite(bulkOperations);
 
-    res.status(200).json({ message: 'Evaluation updated successfully', 
+    // --- 🧮 Calculate average and total questions ---
+    const allQuestions = await NistQuestion.find({});
+    const totalQuestions = allQuestions.length;
+
+    const existingAnswers = await NistAnswer.find({ evaluationId });
+
+    const attendedMarks = existingAnswers.reduce((sum, ans) => sum + (ans.marks || 0), 0);
+    const unansweredCount = totalQuestions - existingAnswers.length;
+    const totalMarks = attendedMarks + unansweredCount * 1; // default 1 mark for unanswered
+
+    const average = totalQuestions > 0 ? (totalMarks / totalQuestions).toFixed(2) : '0.00';
+
+    return res.status(200).json({
+      message: 'Evaluation updated successfully',
       data: {
-        evaluationId: evaluation._id
-      }
-     });
+        evaluationId: evaluation._id,
+        totalQuestions,
+        totalMarks,
+        averageScore: Number(average),
+      },
+    });
+
   } catch (error) {
     console.error('Error updating evaluation:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
 
+
 export const getNistEvaluationStats = async (req, res) => {
   try {
     const { evaluationId } = req.params;
 
-    // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(evaluationId)) {
       return res.status(400).json({ success: false, message: 'Invalid evaluation ID' });
     }
 
-    // Fetch evaluation
     const evaluation = await NistEvaluation.findById(evaluationId);
     if (!evaluation) {
       return res.status(404).json({ success: false, message: 'Evaluation not found' });
     }
 
-    // Get all answers for this evaluation
     const answersGiven = await NistAnswer.find({ evaluationId: evaluation._id });
 
-    // Fetch question counts per function
     const questionCounts = await NistQuestion.aggregate([
       {
         $group: {
@@ -146,7 +161,6 @@ export const getNistEvaluationStats = async (req, res) => {
       totalQuestions += q.count;
     });
 
-    // Calculate marks
     const attendedMarks = answersGiven.reduce((sum, ans) => sum + (ans?.marks || 0), 0);
     const unansweredCount = totalQuestions - answersGiven.length;
     const defaultMarksForUnanswered = unansweredCount > 0 ? unansweredCount * 1 : 0;
@@ -225,9 +239,10 @@ export const getFunctionWiseAnswers = async (req, res) => {
 export const getAssessmentsByUser = async (req, res) => {
   try {
     const userId = req.user._id;
+    const { type } = req.params;
 
     const evaluations = await NistEvaluation.find(
-      { userId },
+      { userId},
       { answersGiven: 0 }
     ).sort({ createdAt: -1 });
 
@@ -245,39 +260,52 @@ export const getFunctionWiseAverage = async (req, res) => {
   try {
     const { evaluationId } = req.params;
 
+    // Validate evaluation exists
     const evaluation = await NistEvaluation.findById(evaluationId);
     if (!evaluation) {
       return res.status(404).json({ success: false, message: 'Evaluation not found' });
     }
 
+    // Fetch all answers for the evaluation
+    const answers = await NistAnswer.find({ evaluationId });
     const answersMap = {};
-    evaluation.answersGiven.forEach(ans => {
+    answers.forEach(ans => {
       answersMap[ans.questionId.toString()] = ans;
     });
 
+    // Fetch all questions
     const allQuestions = await NistQuestion.find({});
-    const grouped = {};
 
-    allQuestions.forEach(q => {
-      if (!grouped[q.function]) grouped[q.function] = [];
-      grouped[q.function].push(q);
+    // Group questions by function
+    const groupedByFunction = {};
+    for (const question of allQuestions) {
+      const func = question.function || 'UNKNOWN';
+      if (!groupedByFunction[func]) groupedByFunction[func] = [];
+      groupedByFunction[func].push(question);
+    }
+
+    // Calculate averages per function
+    const result = Object.entries(groupedByFunction).map(([functionName, questions]) => {
+      let totalScore = 0;
+
+      for (const q of questions) {
+        const answer = answersMap[q._id.toString()];
+        totalScore += answer?.marks ?? 1; // Default mark if unanswered
+      }
+
+      const averageScore = questions.length ? (totalScore / questions.length).toFixed(2) : "0.00";
+
+      return { functionName, averageScore };
     });
 
-    const result = Object.entries(grouped).map(([func, questions]) => {
-      const totalScore = questions.reduce((sum, q) => {
-        const ans = answersMap[q._id.toString()];
-        return sum + (ans ? ans.marks : 1);
-      }, 0);
-      return {
-        functionName: func,
-        averageScore: (totalScore / questions.length).toFixed(2),
-      };
+    return res.status(200).json({
+      success: true,
+      data: result
     });
 
-    return res.status(200).json({ success: true, data: result });
   } catch (err) {
     console.error('❌ Error calculating function-wise averages:', err);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -285,28 +313,37 @@ export const getNistQuestionsWithAnswers = async (req, res) => {
   try {
     const { evaluationId } = req.params;
 
+    // Check if evaluation exists
     const evaluation = await NistEvaluation.findById(evaluationId);
     if (!evaluation) {
       return res.status(404).json({ success: false, message: 'Evaluation not found' });
     }
 
+    // Fetch all questions
     const allQuestions = await NistQuestion.find({});
-    const answerMap = {};
-    evaluation.answersGiven.forEach(ans => {
-      answerMap[ans.questionId.toString()] = ans;
+
+    // Fetch answers for this evaluation
+    const answers = await NistAnswer.find({ evaluationId });
+
+    // Map answers by questionId for fast lookup
+    const answerMap = new Map();
+    answers.forEach(ans => {
+      answerMap.set(ans.questionId.toString(), ans);
     });
 
+    // Combine question and corresponding answer
     const result = allQuestions.map(q => {
-      const ans = answerMap[q._id.toString()];
+      const ans = answerMap.get(q._id.toString());
+
       return {
         questionId: q._id,
-        question_text: q.questionText,
+        questionText: q.questionText,
         function: q.function,
-        subcategory: q.subcategory,
-        subcategoryDescription: q.subcategoryDescription,
-        answer: ans ? q.answers?.[ans.marks - 1] : 'No',
-        marks: ans ? ans.marks : 1,
-        options: q.answers,
+        subcategory: q.toObject().subcategory,
+        subcategoryDescription: q.toObject().subcategoryDescription,
+        answer: ans ? q.answers?.[ans.marks - 1] || 'No' : 'No',
+        marks: ans?.marks || 1,
+        options: q.answers || []
       };
     });
 
@@ -316,3 +353,5 @@ export const getNistQuestionsWithAnswers = async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
+
