@@ -319,23 +319,21 @@ export const getNistQuestionsWithAnswers = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Evaluation not found' });
     }
 
-    // Fetch all questions
     const allQuestions = await NistQuestion.find({});
 
-    // Fetch answers for this evaluation
     const answers = await NistAnswer.find({ evaluationId });
 
-    // Map answers by questionId for fast lookup
     const answerMap = new Map();
     answers.forEach(ans => {
       answerMap.set(ans.questionId.toString(), ans);
     });
 
-    // Combine question and corresponding answer
     const result = allQuestions.map(q => {
-      const ans = answerMap.get(q._id.toString());
+    const ans = answerMap.get(q._id.toString());
 
-      return {
+    console.log("backend question is ", q.toObject().answers)
+
+    return {
         questionId: q._id,
         questionText: q.questionText,
         function: q.function,
@@ -343,7 +341,7 @@ export const getNistQuestionsWithAnswers = async (req, res) => {
         subcategoryDescription: q.toObject().subcategoryDescription,
         answer: ans ? q.answers?.[ans.marks - 1] || 'No' : 'No',
         marks: ans?.marks || 1,
-        options: q.answers || []
+        options: q.toObject().answers || []
       };
     });
 

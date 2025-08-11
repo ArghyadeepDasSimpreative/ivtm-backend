@@ -26,7 +26,7 @@ export const authorize = (allowedRoles) => {
       req.user = { _id: userFound._id, role: userFound.role }
       next()
     } catch (err) {
-      console.log('Authorization error:', err)
+      // console.log('Authorization error:', err)
       res.status(401).json({ message: 'Invalid or expired token' })
     }
   }

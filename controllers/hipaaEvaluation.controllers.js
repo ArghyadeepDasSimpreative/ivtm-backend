@@ -1,6 +1,5 @@
 import HipaaEvaluation from "../models/hipaaEvaluation.model.js";
 import HipaaQuestion from "../models/hipaaQuestions.model.js";
-import mongoose from 'mongoose';
 
 export const recordHipaaEvaluation = async (req, res) => {
   try {
@@ -44,9 +43,17 @@ export const getUserHipaaEvaluations = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const evaluations = await HipaaEvaluation.find({ userId }).select('_id timeTaken').sort({ timeTaken: -1 });
+    const evaluations = await HipaaEvaluation.find({ userId })
+      .select('_id timeTaken')
+      .sort({ timeTaken: -1 })
+      .lean(); // returns plain JS objects
 
-    return res.status(200).json(evaluations);
+    const evaluationsData = evaluations.map(evaluation => ({
+      ...evaluation,
+      status: "submitted"
+    }));
+
+    return res.status(200).json({ data: evaluationsData, success: true });
   } catch (error) {
     console.error('Error fetching user evaluations:', error);
     return res.status(500).json({ message: 'Internal server error' });

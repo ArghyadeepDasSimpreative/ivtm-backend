@@ -63,3 +63,27 @@ export const uploadExcel = multer({
   fileFilter: excelFilter,
   limits: { fileSize: 10 * 1024 * 1024 },
 }).single('excel');
+
+// ----------------------
+// PDF or EXCEL UPLOAD
+// ----------------------
+const pdfOrExcelFilter = (req, file, cb) => {
+  const allowedMimeTypes = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+    'application/vnd.ms-excel' // .xls
+  ];
+
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF or Excel files (.pdf, .xlsx, .xls) are allowed'));
+  }
+};
+
+export const uploadPdfOrExcel = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: pdfOrExcelFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
+}).single('file'); // Field name is now 'file'
+
