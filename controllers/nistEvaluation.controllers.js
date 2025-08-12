@@ -313,35 +313,40 @@ export const getNistQuestionsWithAnswers = async (req, res) => {
   try {
     const { evaluationId } = req.params;
 
-    // Check if evaluation exists
+    // Check evaluation exists
     const evaluation = await NistEvaluation.findById(evaluationId);
     if (!evaluation) {
       return res.status(404).json({ success: false, message: 'Evaluation not found' });
     }
 
-    const allQuestions = await NistQuestion.find({});
+    // Fetch all questions
+    const allQuestions = await NistQuestion.find({}).lean();
 
-    const answers = await NistAnswer.find({ evaluationId });
+    // Fetch all answers for this evaluation
+    const answers = await NistAnswer.find({ evaluationId }).lean();
 
+    // Map answers for quick lookup
     const answerMap = new Map();
     answers.forEach(ans => {
       answerMap.set(ans.questionId.toString(), ans);
     });
 
+    // Prepare the result
     const result = allQuestions.map(q => {
-    const ans = answerMap.get(q._id.toString());
+      const ans = answerMap.get(q._id.toString());
 
-    console.log("backend question is ", q.toObject().answers)
+      // Ensure answers array exists
+      const optionsArray = Array.isArray(q.answers) ? q.answers : [];
 
-    return {
+      return {
         questionId: q._id,
         questionText: q.questionText,
         function: q.function,
-        subcategory: q.toObject().subcategory,
-        subcategoryDescription: q.toObject().subcategoryDescription,
-        answer: ans ? q.answers?.[ans.marks - 1] || 'No' : 'No',
+        subcategory: q.subcategory,
+        subcategoryDescription: q.subcategoryDescription,
+        answer: ans ? (optionsArray[ans.marks - 1] || 'No') : 'No',
         marks: ans?.marks || 1,
-        options: q.toObject().answers || []
+        options: optionsArray
       };
     });
 
@@ -351,5 +356,6 @@ export const getNistQuestionsWithAnswers = async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
 
 

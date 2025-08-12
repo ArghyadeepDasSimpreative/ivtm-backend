@@ -7,6 +7,9 @@ import {
   getOrganizationUserProfile,
   createOrganizationUser,
   getAllOrganizationUsers,
+  sendForgotPasswordOtp,
+  verifyForgotPasswordOtp,
+  resetPasswordWithOtp,
 } from "../controllers/organisationUser.controllers.js";
 import { uploadImage } from "../middlewares/upload.js";
 import { authorize } from "../middlewares/authorize.js";
@@ -20,5 +23,8 @@ organisationUserRoutes.put("/profile-image", authorize(["admin"]), uploadImage, 
 organisationUserRoutes.get("/all-users", authorize(["admin"]), getAllOrganizationUsers);
 organisationUserRoutes.post("/create-user", authorize(["admin"]), createOrganizationUser);
 organisationUserRoutes.get("/details", authorize(["admin"]), getOrganizationUserProfile);
+organisationUserRoutes.put("/forget-password", sendForgotPasswordOtp);
+organisationUserRoutes.post("/forget-password-otp", verifyForgotPasswordOtp);
+organisationUserRoutes.post("/reset-password", resetPasswordWithOtp);
 
 export default organisationUserRoutes;
