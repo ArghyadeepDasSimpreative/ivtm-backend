@@ -10,6 +10,8 @@ import nistEvaluationRoutes from "./routes/nistEvaluation.routes.js";
 import hipaaQuestionRoutes from "./routes/hipaaQuestion.routes.js";
 import hipaaEvaluationRoutes from "./routes/hipaaEvaluation.routes.js";
 import vulnerabilityReportRoutes from "./routes/vulnerabilityReport.routes.js";
+import c2m2QuestionRoutes from "./routes/c2m2Question.routes.js";
+import c2m2EvaluationRoutes from "./routes/c2m2Evaluation.routes.js";
 
 dotenv.config();
 connectDB();
@@ -29,6 +31,8 @@ app.use("/nist-evaluation", nistEvaluationRoutes);
 app.use("/hipaa-questions", hipaaQuestionRoutes);
 app.use("/hipaa-evaluations", hipaaEvaluationRoutes);
 app.use("/vulnerability-reports", vulnerabilityReportRoutes);
+app.use("/c2m2-questions", c2m2QuestionRoutes);
+app.use("/c2m2-evaluations", c2m2EvaluationRoutes);
 
 
 const PORT = process.env.PORT || 5000;
