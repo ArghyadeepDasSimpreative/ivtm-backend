@@ -182,7 +182,8 @@ export const signinUser = async (req, res) => {
         organisationName: user.organisationName,
         businessEmail: user.businessEmail,
         phoneNumber: user.phoneNumber,
-        username: user.username
+        username: user.username,
+        role: user.role
       }
     });
 
@@ -309,16 +310,13 @@ export const sendForgotPasswordOtp = async (req, res) => {
       return res.status(404).json({ success: false, message: 'No user found with this email' });
     }
 
-    // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Set OTP and expiration (10 minutes)
     user.otp = otp;
     user.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await user.save();
 
-    // Send the OTP via email
     await sendOtpMail(businessEmail, otp);
 
     return res.status(200).json({
@@ -416,17 +414,13 @@ export const resetPasswordWithOtp = async (req, res) => {
       });
     }
 
-    // Hash new password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // Since signinUser uses defaultPassword, store it there
     user.defaultPassword = hashedPassword;
 
-    // Optional: also keep a dedicated `password` field for future migration
     user.password = hashedPassword;
 
-    // Clear OTP data
     user.otp = null;
     user.otpExpiresAt = null;
 
