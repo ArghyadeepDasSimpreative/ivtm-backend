@@ -14,11 +14,11 @@ export const uploadc2m2Questions = async (req, res) => {
 
         // Map & rename fields
         const formattedRows = rows.map(row => ({
-            Domain: row.Domain,
-            Practice: row.Practice,
-            PracticeText: row['Practice Text'],
-            Question: row.Question,
-            Answer: row.Answer,
+            domain: row.Domain,
+            practice: row.Practice,
+            practiceText: row['Practice Text'],
+            question: row.Question,
+            answer: row.Answer,
             markOne: row.MIL,
             markTwo: row.__EMPTY
         }));
@@ -37,7 +37,7 @@ export const uploadc2m2Questions = async (req, res) => {
 
 export const getDistinctC2m2Domains = async (req, res) => {
     try {
-        const domains = await C2m2QuestionModel.distinct("Domain");
+        const domains = await C2m2QuestionModel.distinct("domain");
         res.status(200).json({ domains });
     } catch (err) {
         res.status(500).json({ message: err?.message || "Error fetching distinct domains" });
@@ -52,7 +52,7 @@ export const getC2m2QuestionsByDomain = async (req, res) => {
             return res.status(400).json({ message: "Domain parameter is required" });
         }
 
-        const questions = await C2m2QuestionModel.find({ Domain: domain });
+        const questions = await C2m2QuestionModel.find({ domain: domain });
         res.status(200).json({ questions });
     } catch (err) {
       console.log(err);

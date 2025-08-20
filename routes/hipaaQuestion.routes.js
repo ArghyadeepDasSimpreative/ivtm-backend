@@ -5,8 +5,8 @@ import { authorize } from "../middlewares/authorize.js";
 
 const hipaaQuestionRoutes = express.Router();
 
-hipaaQuestionRoutes.post("/upload", uploadExcel, uploadHipaaQuestions);
-hipaaQuestionRoutes.get("/", authorize(["admin"]), getAllHipaaQuestions );
-hipaaQuestionRoutes.get("/categories", authorize(["admin"]), getHipaaCategories);
+hipaaQuestionRoutes.post("/upload",authorize(["sysadmin"]), uploadExcel, uploadHipaaQuestions);
+hipaaQuestionRoutes.get("/", authorize(["admin", "editor", "viewer"]), getAllHipaaQuestions );
+hipaaQuestionRoutes.get("/categories", authorize(["admin", "editor", "viewer"]), getHipaaCategories);
 
 export default hipaaQuestionRoutes;

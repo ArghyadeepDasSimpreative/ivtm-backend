@@ -5,8 +5,8 @@ import { authorize } from "../middlewares/authorize.js";
 
 const c2m2QuestionRoutes = express.Router();
 
-c2m2QuestionRoutes.post("/upload", uploadPdfOrExcel, uploadc2m2Questions);
-c2m2QuestionRoutes.get("/:domain", authorize(["admin"]),getC2m2QuestionsByDomain);
-c2m2QuestionRoutes.get("/questions/domains", authorize(["admin"]), getDistinctC2m2Domains);
+c2m2QuestionRoutes.post("/upload",authorize(["sysadmin"]), uploadPdfOrExcel, uploadc2m2Questions);
+c2m2QuestionRoutes.get("/:domain", authorize(["admin", "editor", "viewer"]),getC2m2QuestionsByDomain);
+c2m2QuestionRoutes.get("/questions/domains", authorize(["admin", "editor", "viewer"]), getDistinctC2m2Domains);
 
 export default c2m2QuestionRoutes;

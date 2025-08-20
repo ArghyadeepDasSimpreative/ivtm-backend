@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import C2m2Answer from "../models/c2m2Answer.model.js";
 import { C2m2Evaluation } from "../models/c2m2Evaluation.model.js";
 import C2m2Question from "../models/c2m2Question.model.js";
+import { OrganizationUser } from "../models/organisationUser.model.js";
 
 export const createC2m2Evaluation = async (req, res) => {
   try {
@@ -108,15 +109,32 @@ export const getUserC2m2Evaluations = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const evaluations = await C2m2Evaluation.find({ userId })
+    // Find the requesting user to get organisationName
+    const requestingUser = await OrganizationUser.findById(userId);
+
+    if (!requestingUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const orgName = requestingUser.organisationName;
+
+    if (!orgName) {
+      return res.status(400).json({ message: "User does not belong to any organization" });
+    }
+
+    // Find all users in the same organization
+    const orgUsers = await OrganizationUser.find({ organisationName: orgName }, '_id');
+
+    const orgUserIds = orgUsers.map(u => u._id);
+
+    // Fetch C2M2 evaluations for all users in the organization
+    const evaluations = await C2m2Evaluation.find({ userId: { $in: orgUserIds } })
       .select("_id evaluationTime status averageScore")
       .sort({ evaluationTime: -1 })
       .lean();
 
-    const evaluationsData = evaluations
-
     return res.status(200).json({
-      data: evaluationsData,
+      data: evaluations,
       success: true
     });
 
@@ -159,9 +177,9 @@ export const getC2m2QuestionsWithAnswers = async (req, res) => {
 
       return {
         questionId: q._id,
-        practice: q.Practice,         // from schema
-        practiceText: q.PracticeText, // from schema
-        domain: q.Domain,             // domain name
+        practice: q.practice,         // from schema
+        practiceText: q.practiceText, // from schema
+        domain: q.domain,             // domain name
         answer: answerExists ? ans.marks == 0 ? "No" : "Yes" : "No",
         marks: ans?.marks,       // default 0 if unanswered
         options: ["No", "Yes"]
@@ -233,3 +251,14 @@ export const getDomainWiseAverage = async (req, res) => {
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+export async function hasDraftAssessment(req,res) {
+  try {
+    const userId = req.user._id;
+    const draftExists = await C2m2Evaluation.exists({ userId, status: 'draft' });
+    return res.status(200).json({status: Boolean(draftExists)});
+  } catch (error) {
+    console.error('Error checking draft status:', error);
+    return false;
+  }
+}

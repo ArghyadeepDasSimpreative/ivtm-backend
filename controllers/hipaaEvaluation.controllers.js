@@ -1,5 +1,6 @@
 import HipaaEvaluation from "../models/hipaaEvaluation.model.js";
 import HipaaQuestion from "../models/hipaaQuestions.model.js";
+import { OrganizationUser } from "../models/organisationUser.model.js";
 
 export const recordHipaaEvaluation = async (req, res) => {
   try {
@@ -43,14 +44,33 @@ export const getUserHipaaEvaluations = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const evaluations = await HipaaEvaluation.find({ userId })
-      .select('_id timeTaken')
+    // Find the requesting user to get organisationName
+    const requestingUser = await OrganizationUser.findById(userId);
+
+    if (!requestingUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const orgName = requestingUser.organisationName;
+
+    if (!orgName) {
+      return res.status(400).json({ message: 'User does not belong to any organization' });
+    }
+
+    // Find all users in the same organization
+    const orgUsers = await OrganizationUser.find({ organisationName: orgName }, '_id');
+
+    const orgUserIds = orgUsers.map(u => u._id);
+
+    // Fetch HIPAA evaluations for all users in the organization
+    const evaluations = await HipaaEvaluation.find({ userId: { $in: orgUserIds } })
+      .select('_id timeTaken status')  // include status here explicitly
       .sort({ timeTaken: -1 })
-      .lean(); // returns plain JS objects
+      .lean();
 
     const evaluationsData = evaluations.map(evaluation => ({
       ...evaluation,
-      status: "submitted"
+      status: evaluation.status || "submitted"
     }));
 
     return res.status(200).json({ data: evaluationsData, success: true });

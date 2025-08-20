@@ -2,6 +2,7 @@ import { NistEvaluation } from '../models/nistEvaluation.model.js';
 import { NistQuestion } from '../models/nistQuestions.model.js';
 import { NistAnswer } from '../models/nistAnswer.model.js';
 import mongoose from 'mongoose';
+import { OrganizationUser } from '../models/organisationUser.model.js';
 
 export const createNistEvaluation = async (req, res) => {
   try {
@@ -239,10 +240,28 @@ export const getFunctionWiseAnswers = async (req, res) => {
 export const getAssessmentsByUser = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { type } = req.params;
 
+    // Find the requesting user to get his/her organisationName
+    const requestingUser = await OrganizationUser.findById(userId);
+
+    if (!requestingUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const orgName = requestingUser.organisationName;
+
+    if (!orgName) {
+      return res.status(400).json({ success: false, message: 'User does not belong to any organization' });
+    }
+
+    // Find all users with the same organisationName
+    const orgUsers = await OrganizationUser.find({ organisationName: orgName }, '_id');
+
+    const orgUserIds = orgUsers.map(u => u._id);
+
+    // Find all evaluations for any user in this organisation
     const evaluations = await NistEvaluation.find(
-      { userId},
+      { userId: { $in: orgUserIds } },
       { answersGiven: 0 }
     ).sort({ createdAt: -1 });
 
@@ -250,6 +269,7 @@ export const getAssessmentsByUser = async (req, res) => {
       success: true,
       data: evaluations,
     });
+
   } catch (err) {
     console.error('❌ Error fetching user assessments:', err);
     res.status(500).json({ success: false, message: 'Internal server error' });
@@ -356,6 +376,17 @@ export const getNistQuestionsWithAnswers = async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
+export async function hasDraftNistEvaluation(req, res) {
+  try {
+    const userId = req.user._id;
+    const draftExists = await NistEvaluation.exists({ userId, status: 'draft' });
+    return res.status(200).json({ status: Boolean(draftExists) });
+  } catch (error) {
+    console.error('Error checking NIST draft status:', error);
+    return false;
+  }
+}
 
 
 

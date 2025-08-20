@@ -6,10 +6,10 @@ import { uploadExcel } from "../middlewares/upload.js";
 
 const nistQuestionRoutes = express.Router();
 
-nistQuestionRoutes.post("/", createNistQuestion);
-nistQuestionRoutes.get("/", authorize(["admin"]), getNistQuestionsByFunction);
-nistQuestionRoutes.post("/upload", uploadExcel, uploadNistQuestions);
-nistQuestionRoutes.get("/subcategories", getUniqueSubcategoriesByFunction);
-nistQuestionRoutes.get("/questions-length", authorize("user"), getQuestionCountByFunction);
+// nistQuestionRoutes.post("/", createNistQuestion);
+nistQuestionRoutes.get("/", authorize(["admin", "editor", "viewer"]), getNistQuestionsByFunction);
+nistQuestionRoutes.post("/upload", authorize(["sysadmin"]), uploadExcel, uploadNistQuestions);
+nistQuestionRoutes.get("/subcategories", authorize(["admin", "editor", "viewer"]), getUniqueSubcategoriesByFunction);
+nistQuestionRoutes.get("/questions-length", authorize(["admin", "editor", "viewer"]), getQuestionCountByFunction);
 
 export default nistQuestionRoutes;
