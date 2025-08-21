@@ -4,6 +4,7 @@ import { C2m2Evaluation } from "../models/c2m2Evaluation.model.js";
 import C2m2Question from "../models/c2m2Question.model.js";
 import { OrganizationUser } from "../models/organisationUser.model.js";
 
+
 export const createC2m2Evaluation = async (req, res) => {
   try {
     const { answers, status } = req.body;
@@ -81,13 +82,13 @@ export const updateC2m2Evaluation = async (req, res) => {
     }
 
     // Recalculate average score
+    const allQuestions = await C2m2Question.find();
     const allAnswers = await C2m2Answer.find({ evaluationId: id });
     const totalMarks = allAnswers.reduce((sum, a) => sum + (a.marks || 0), 0);
-    const averageScore = totalMarks / allAnswers.length;
+    const averageScore = totalMarks / allQuestions.length;
 
     evaluation.averageScore = averageScore;
     if (status) evaluation.status = status ? "submitted" : "draft";
-    console.log("evaluation stats is ", evaluation.status)
     await evaluation.save();
 
     return res.status(200).json({
@@ -96,7 +97,7 @@ export const updateC2m2Evaluation = async (req, res) => {
       averageScore
     });
   } catch (err) {
-    console.error("Error updating C2M2 evaluation:", err);
+    // console.error("Error updating C2M2 evaluation:", err);
     res.status(500).json({ message: err.message || "Server error" });
   }
 };
@@ -148,16 +149,12 @@ export const getC2m2QuestionsWithAnswers = async (req, res) => {
   try {
     const { evaluationId } = req.params;
 
-    console.log("evluation id is ", evaluationId)
-
     if (!mongoose.Types.ObjectId.isValid(evaluationId)) {
       return res.status(400).json({ success: false, message: "Invalid evaluation ID" });
     }
 
     const evaluation = await C2m2Evaluation.findById(evaluationId);
-    console.log("evaluation found is xxx ", evaluation)
     if (!evaluation) {
-      console.log("evaluation not found is ", !evaluation)
       return res.status(404).json({ success: false, message: "Evaluation not found" });
     }
 
@@ -170,31 +167,44 @@ export const getC2m2QuestionsWithAnswers = async (req, res) => {
       answerMap.set(ans.questionId.toString(), ans);
     });
 
+    let marksSum = 0;
     const result = allQuestions.map(q => {
       const ans = answerMap.get(q._id.toString());
+      const answerExists = Boolean(ans);
 
-      const answerExists = Boolean(ans)
+      let answerLabel = "No";
+      if (answerExists) {
+        answerLabel = ans.marks === 0 ? "No" : "Yes";
+        marksSum += ans.marks || 0;
+      }
 
       return {
         questionId: q._id,
-        practice: q.practice,         // from schema
-        practiceText: q.practiceText, // from schema
-        domain: q.domain,             // domain name
-        answer: answerExists ? ans.marks == 0 ? "No" : "Yes" : "No",
-        marks: ans?.marks,       // default 0 if unanswered
-        options: ["No", "Yes"]
+        practice: q.practice,
+        practiceText: q.practiceText,
+        domain: q.domain,
+        answer: answerLabel,
+        marks: ans?.marks || 0,
+        options: ["No", "Yes"],
+        marksArray: [q.markOne, q.markTwo]
       };
     });
 
-    // 6️⃣ Send response
-    return res.status(200).json({ success: true, data: result });
+    // Calculate average score (number of answered questions only)
+    const numQuestions = allQuestions.length;
+    const averageScore = numQuestions ? (marksSum / numQuestions) : 0;
+
+    return res.status(200).json({ 
+      success: true, 
+      data: result,
+      averageScore
+    });
 
   } catch (err) {
     console.error("❌ Error fetching C2M2 questions with answers:", err);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
 
 export const getDomainWiseAverage = async (req, res) => {
   try {

@@ -20,7 +20,7 @@ export const authorize = (allowedRoles) => {
       }
 
       if (!allowedRoles.includes(userFound.toObject().role)) {
-        return res.status(403).json({ message: 'Forbidden: Insufficient role' })
+        return res.status(403).json({ message: 'You are not authorized to do this.' })
       }
       // console.log("requesting user is ", decoded)
       req.user = { _id: userFound._id, role: userFound.role }

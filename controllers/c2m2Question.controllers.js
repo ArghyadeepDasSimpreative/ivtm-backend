@@ -12,6 +12,8 @@ export const uploadc2m2Questions = async (req, res) => {
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = xlsx.utils.sheet_to_json(sheet, { defval: '' });
 
+        console.log("first row is ", rows[112].MIL, " and " , rows[0].__EMPTY)
+
         // Map & rename fields
         const formattedRows = rows.map(row => ({
             domain: row.Domain,

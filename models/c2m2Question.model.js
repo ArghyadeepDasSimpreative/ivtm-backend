@@ -7,8 +7,8 @@ const C2m2QuestionSchema = new mongoose.Schema({
   practiceText: { type: String, required: true }, // renamed "PracticeText"
   question: { type: String, default: '' },
   answer: { type: String, default: '' },
-  markone: { type: Number, default: null }, // markOne renamed
-  marktwo: { type: Number, default: null }  // markTwo renamed
+  markOne: { type: Number, default: null }, // markOne renamed
+  markTwo: { type: Number, default: null }  // markTwo renamed
 }, { timestamps: true });
 
 export default mongoose.model('C2m2Question', C2m2QuestionSchema);
